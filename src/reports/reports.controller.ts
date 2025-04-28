@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { Response } from 'express';
 
@@ -6,7 +6,7 @@ import { Response } from 'express';
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  @Get('bill')
+  @Post('bill') // Cambiado de GET a POST
   async getBillReport(@Body() body: any, @Res() response: Response) {
     const pdfDoc = await this.reportsService.getBillReport(body);
 

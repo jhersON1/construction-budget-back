@@ -5,6 +5,7 @@ import { AssistantModule } from './assistant/assistant.module';
 import { ConfigModule } from '@nestjs/config';
 import { ReportsModule } from './reports/reports.module';
 import { PrinterModule } from './printer/printer.module';
+import { AssitantEventModule } from './assitant-event/assitant-event.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { PrinterModule } from './printer/printer.module';
     }),
     AssistantModule,
     ReportsModule,
-    PrinterModule
+    PrinterModule,
+    AssitantEventModule
   ],
   controllers: [AppController],
   providers: [AppService],

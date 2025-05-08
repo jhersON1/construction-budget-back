@@ -4,7 +4,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { QuestionDto } from './dto/question.dto';
 
-@Controller('assitant-event')
+@Controller('event')
 export class AssitantEventController {
   constructor(private readonly assitantEventService: AssitantEventService) { }
 

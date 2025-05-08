@@ -71,26 +71,37 @@ export class AssitantEventService {
     async formatPresupuesto(textoPresupuesto: string): Promise<{
         presupuestos: Array<{
             tipo: string;
-            partidas: Array<{
-                material: string;
-                cantidad: number | null;
-                precio_unitario: number | null;
-                proveedor: string;
-                subtotal: number;
+            datos_generales: {
+                tipo_evento: string;
+                ubicacion: string;
+                fecha: string;
+                invitados: number;
+                modalidad: string;
+                presupuesto_maximo: string;
+            };
+            categorias: Array<{
+                nombre: string;
+                partidas: Array<{
+                    material: string;
+                    cantidad: string;
+                    precio_unitario: number;
+                    proveedor: string;
+                    subtotal: number;
+                }>;
+                subtotal_categoria: number;
             }>;
             totales: {
-                materiales: number;
-                mano_de_obra: number;
-                extras: number;
+                subtotal: number;
+                honorarios: number;
                 costo_total_estimado: number;
             };
             justificacion_tecnica: string;
             moneda: string;
         }>;
     }> {
-        // 1) Limpieza básica para quitar markdown, citas de fuente, etc.
+        // 1) Limpieza básica
         const limpio = textoPresupuesto
-            .replace(/[\s\S]*?/g, '') // quita bloques de código
+            .replace(/```[\s\S]*?```/g, '') // quita bloques de código
             .replace(/###.*\n/g, '') // quita encabezados markdown
             .replace(/【.*?†source】/g, '') // quita referencias de fuente
             .trim();
@@ -102,34 +113,9 @@ export class AssitantEventService {
                 {
                     role: 'system',
                     content: `
-Eres un servicio que recibe un bloque de texto con uno o varios presupuestos (p. ej. “Presupuesto Solicitado (Económico)”, “Presupuesto Recomendado (Estándar)”, etc.) y DEVUELVES SÓLO JSON con esta estructura:
+Eres un servicio que recibe un bloque de texto con información de presupuesto para eventos y lo convierte a formato JSON estructurado. El texto incluye secciones como datos generales, categorías de gastos (marcadas con 🔹), partidas individuales, resumen general (✅) y justificación técnica (📌).
 
-{
-  "presupuestos": [
-    {
-      "tipo": "string (el título del presupuesto, tal cual aparece en el texto)",
-      "partidas": [
-        {
-          "material": "string",
-          "cantidad": number | null,
-          "precio_unitario": number | null,
-          "proveedor": "string",
-          "subtotal": number
-        },
-        …
-      ],
-      "totales": {
-        "materiales": number,
-        "mano_de_obra": number,
-        "extras": number,
-        "costo_total_estimado": number
-      },
-      "justificacion_tecnica": "string",
-      "moneda": "string"
-    },
-    …
-  ]
-}
+Tu tarea es extraer toda esta información y organizarla en la estructura JSON especificada.
           `.trim(),
                 },
                 { role: 'user', content: limpio },
@@ -138,7 +124,7 @@ Eres un servicio que recibe un bloque de texto con uno o varios presupuestos (p.
                 {
                     name: 'generar_presupuestos',
                     description:
-                        'Extrae todos los presupuestos del texto y los devuelve en un array.',
+                        'Extrae el presupuesto del texto y lo devuelve en formato estructurado.',
                     parameters: {
                         type: 'object',
                         properties: {
@@ -148,51 +134,57 @@ Eres un servicio que recibe un bloque de texto con uno o varios presupuestos (p.
                                     type: 'object',
                                     properties: {
                                         tipo: { type: 'string' },
-                                        partidas: {
+                                        datos_generales: {
+                                            type: 'object',
+                                            properties: {
+                                                tipo_evento: { type: 'string' },
+                                                ubicacion: { type: 'string' },
+                                                fecha: { type: 'string' },
+                                                invitados: { type: 'number' },
+                                                modalidad: { type: 'string' },
+                                                presupuesto_maximo: { type: 'string' }
+                                            }
+                                        },
+                                        categorias: {
                                             type: 'array',
                                             items: {
                                                 type: 'object',
                                                 properties: {
-                                                    material: { type: 'string' },
-                                                    cantidad: { type: ['number', 'null'] },
-                                                    precio_unitario: { type: ['number', 'null'] },
-                                                    proveedor: { type: 'string' },
-                                                    subtotal: { type: 'number' },
-                                                },
-                                                required: ['material', 'proveedor', 'subtotal'],
-                                            },
+                                                    nombre: { type: 'string' },
+                                                    partidas: {
+                                                        type: 'array',
+                                                        items: {
+                                                            type: 'object',
+                                                            properties: {
+                                                                material: { type: 'string' },
+                                                                cantidad: { type: 'string' },
+                                                                precio_unitario: { type: 'number' },
+                                                                proveedor: { type: 'string' },
+                                                                subtotal: { type: 'number' }
+                                                            }
+                                                        }
+                                                    },
+                                                    subtotal_categoria: { type: 'number' }
+                                                }
+                                            }
                                         },
                                         totales: {
                                             type: 'object',
                                             properties: {
-                                                materiales: { type: 'number' },
-                                                mano_de_obra: { type: 'number' },
-                                                extras: { type: 'number' },
-                                                costo_total_estimado: { type: 'number' },
-                                            },
-                                            required: [
-                                                'materiales',
-                                                'mano_de_obra',
-                                                'extras',
-                                                'costo_total_estimado',
-                                            ],
+                                                subtotal: { type: 'number' },
+                                                honorarios: { type: 'number' },
+                                                costo_total_estimado: { type: 'number' }
+                                            }
                                         },
                                         justificacion_tecnica: { type: 'string' },
-                                        moneda: { type: 'string' },
-                                    },
-                                    required: [
-                                        'tipo',
-                                        'partidas',
-                                        'totales',
-                                        'justificacion_tecnica',
-                                        'moneda',
-                                    ],
-                                },
-                            },
+                                        moneda: { type: 'string' }
+                                    }
+                                }
+                            }
                         },
-                        required: ['presupuestos'],
-                    },
-                },
+                        required: ['presupuestos']
+                    }
+                }
             ],
             function_call: { name: 'generar_presupuestos' },
         });

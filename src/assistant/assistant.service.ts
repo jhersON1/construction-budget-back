@@ -43,6 +43,8 @@ export class AssistantService {
 
     const messages = await getMessageListUseCase(this.openai, { threadId });
 
+    console.log('>>> Mensajes:', messages);
+
     // 1) Filtramos SOLO los mensajes del asistente
     const assistantMsgs = messages.filter((msg) => msg.role === 'assistant');
     if (assistantMsgs.length === 0) {
@@ -62,15 +64,7 @@ export class AssistantService {
 
     console.log('>>> Texto a convertir:', textoCompleto);
 
-    // 4) Llamamos al servicio de formato
-    const presupuestoJson = await this.formatPresupuesto(textoCompleto);
 
-    // console.log(presupuestoJson.presupuestos[0].tipo);
-
-    console.log(
-      '>>> Presupuesto estructurado:',
-      JSON.stringify(presupuestoJson, null, 2),
-    );
     return messages;
   }
 
@@ -131,7 +125,7 @@ export class AssistantService {
 
     // 2) Llamada a OpenAI con Function Calling
     const response = await this.openai.chat.completions.create({
-      model: 'gpt-4-0613',
+      model: 'gpt-4o-mini-2024-07-18',
       messages: [
         {
           role: 'system',
